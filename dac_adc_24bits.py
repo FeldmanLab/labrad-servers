@@ -336,7 +336,7 @@ class DAC_ADCServer(DeviceServer):
         returnValue(channels)
 
     @setting(108,dacPorts='*i', adcPorts='*i', ivoltages='*v[]', fvoltages='*v[]', steps='i',delay='v[]',nReadings='i',adcSteps='i',returns='**v[]')#(*v[],*v[])')
-    def buffer_ramp_dis(self,c,dacPorts,adcPorts,ivoltages,fvoltages,steps,delay,adcSteps,nReadings=1):
+    def buffer_ramp_dec(self,c,dacPorts,adcPorts,ivoltages,fvoltages,steps,delay,adcSteps,nReadings=1):
         """
         BUFFER_RAMP ramps the specified output channels from the initial voltages to the final voltages and reads the specified input channels in a synchronized manner. 
         It does it within an specified number steps and a delay (microseconds) between the update of the last output channel and the reading of the first input channel.
@@ -365,7 +365,7 @@ class DAC_ADCServer(DeviceServer):
             sadcPorts = sadcPorts + str(adcPorts[x])
 
         dev = self.selectedDevice(c)
-        yield dev.write('BUFFER_RAMP_DIS,%s,%s,%s,%s,%i,%i,%i,%i\r' % (sdacPorts, sadcPorts, sivoltages, sfvoltages, steps, delay, nReadings, adcSteps))
+        yield dev.write('BUFFER_RAMP_DEC,%s,%s,%s,%s,%i,%i,%i,%i\r' % (sdacPorts, sadcPorts, sivoltages, sfvoltages, steps, delay, nReadings, adcSteps))
         #self.sigBufferRampStarted([dacPorts, adcPorts, ivoltages, fvoltages, str(steps), str(delay), str(nReadings)])
 
         voltages = []
