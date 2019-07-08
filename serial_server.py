@@ -123,6 +123,7 @@ class SerialServer(LabradServer):
             else:
                 _, _, dev_name = dev_path.rpartition(os.sep)
                 self.SerialPorts.append(SerialDevice(dev_name, dev_path))
+                print("  ", dev_name)
 
     def expireContext(self, c):
         if 'PortObject' in c:
