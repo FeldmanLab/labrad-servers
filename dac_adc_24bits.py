@@ -335,15 +335,12 @@ class DAC_ADCServer(DeviceServer):
 
         returnValue(channels)
 
-    @setting(108,dacPorts='*i', adcPorts='*i', ivoltages='*v[]', fvoltages='*v[]', steps='i',delay='v[]',nReadings='i',adcSteps='i',returns='**v[]')#(*v[],*v[])')
-    def buffer_ramp_dec(self,c,dacPorts,adcPorts,ivoltages,fvoltages,steps,delay,adcSteps,nReadings=1):
+    @setting(108,dacPorts='*i', adcPorts='*i', ivoltages='*v[]', fvoltages='*v[]', max_step_sizes='*v[]', max_rates='*v[]', steps='i',delay='v[]',nReadings='i',returns='**v[]')#(*v[],*v[])')
+    def buffer_ramp_dec(self,c,dacPorts,adcPorts,ivoltages,fvoltages,max_step_sizes,max_rates,steps,delay,nReadings=1):
         """
         BUFFER_RAMP ramps the specified output channels from the initial voltages to the final voltages and reads the specified input channels in a synchronized manner. 
         It does it within an specified number steps and a delay (microseconds) between the update of the last output channel and the reading of the first input channel.
         """
-        
-        if adcSteps>steps:
-            raise ValueError('steps must be larger than adcSteps.')
 
         dacN = len(dacPorts)
         adcN = len(adcPorts)
@@ -351,21 +348,27 @@ class DAC_ADCServer(DeviceServer):
         sadcPorts = ""
         sivoltages = ""
         sfvoltages = ""
+        maxStepSizes = ""
+        maxRates = ""
 
 
         for x in range(dacN):
             sdacPorts = sdacPorts + str(dacPorts[x])
             sivoltages = sivoltages + str(ivoltages[x]) + ","
             sfvoltages = sfvoltages + str(fvoltages[x]) + ","
+            maxStepSizes = maxStepSizes + str(max_step_sizes[x]) + ","
+            maxRates = maxRates + str(max_rates[x]) + ","
 
         sivoltages = sivoltages[:-1]
-        sfvoltages = sfvoltages[:-1]    
+        sfvoltages = sfvoltages[:-1]
+        maxStepSizes = maxStepSizes[:-1]
+        maxRates = maxRates[:-1]
 
         for x in range(adcN):
             sadcPorts = sadcPorts + str(adcPorts[x])
 
         dev = self.selectedDevice(c)
-        yield dev.write('BUFFER_RAMP_DEC,%s,%s,%s,%s,%i,%i,%i,%i\r' % (sdacPorts, sadcPorts, sivoltages, sfvoltages, steps, delay, nReadings, adcSteps))
+        yield dev.write('BUFFER_RAMP_DEC,%s,%s,%s,%s,%s,%s,%i,%i,%i\r' % (sdacPorts, sadcPorts, sivoltages, sfvoltages, maxStepSizes, maxRates, steps, delay, nReadings))
         #self.sigBufferRampStarted([dacPorts, adcPorts, ivoltages, fvoltages, str(steps), str(delay), str(nReadings)])
 
         voltages = []
@@ -374,7 +377,7 @@ class DAC_ADCServer(DeviceServer):
         dev.setramping(True)
         try:
             nbytes = 0
-            totalbytes = adcSteps * adcN * 3
+            totalbytes = steps * adcN * 3
             while dev.isramping() and (nbytes < totalbytes):
                 bytestoread = yield dev.in_waiting()
                 if bytestoread > 0:
@@ -406,7 +409,7 @@ class DAC_ADCServer(DeviceServer):
                 voltage = map2(decimal, 0, 16777216, -10.0, 10.0)
                 voltages.append(voltage)
 
-            for x in range(0, totalbytes/3, adcN):
+            for x in range(0, steps * adcN, adcN):
                 for y in range(adcN):
                     try:
                         channels[y].append(voltages[x + y])
